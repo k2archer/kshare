@@ -18,6 +18,7 @@ KShare 是一个能在局域网内和其它支持 SMB 协议的设备，进行�
 
 **Supported Operating Systems**
 * Android 4.2+
+
 **How to use it ?**
 * 在其它的 App 的  "分享" 选择 KShare ，等待扫描完成，打开共享设备，长按共享目录，即可共享文件到该目录下。
 
@@ -30,6 +31,7 @@ KShare 是一个能在局域网内和其它支持 SMB 协议的设备，进行�
 **Building**
 
 git clone https://github.com/k2archer/kshare.git
+
 use Android Studio open it. build it.
 
 ### 版本更新
