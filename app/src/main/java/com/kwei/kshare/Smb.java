@@ -29,7 +29,7 @@ import jcifs.smb.SmbFileInputStream;
 import jcifs.smb.SmbFileOutputStream;
 
 class Smb {
-    private int SCAN_TIMEOUT = 1000 * 3; // 默认 3 秒
+    private int SCAN_TIMEOUT = 1000 * 5; // 默认 5 秒
     private Context mContext;
     private List<String> mListServer;
     private SmbCallback mCallback;
@@ -122,6 +122,34 @@ class Smb {
                 e.printStackTrace();
             }
         }
+    }
+
+    public static String PutFile(String remoteUrl, String localFilePath) {
+        String message = null;
+
+        try {
+            SmbFile smbFile = new SmbFile(remoteUrl);
+//            smbFile.connect(); // 等待连接直到连接超时
+            if (smbFile.isDirectory()) {
+                File localFile = new File(localFilePath);
+                String fileName = localFile.getName();
+                SmbFile sFile = new SmbFile(remoteUrl + fileName);
+                if (sFile.exists()) {
+                    message = "文件已存在!";
+                } else if (!smbFile.canWrite()) {
+                    Smb.smbPut(remoteUrl, localFilePath);
+//                    message = "上传成功!";
+                } else {
+                    message = "无写入权限!";
+                }
+            } else {
+                message = "这不是一个目录!";
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return message;
     }
 
     /**

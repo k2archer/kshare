@@ -101,48 +101,25 @@ public class MainActivity extends AppCompatActivity {
             String uri = (String) mList.get(position);
             pd = ProgressDialog.show(this, "上传文件", "上传中...");
             new Thread(() -> {
-                String title = "上传失败";
-                String message = "发生异常!";
-                try {
-                    SmbFile smbFile = new SmbFile(uri);
-                    smbFile.connect(); // 等待连接直到连接超时
-                    if (smbFile.isDirectory()) {
-                        File localFile = new File(mFilePath);
-                        String fileName = localFile.getName();
-                        SmbFile sFile = new SmbFile(uri + fileName);
-                        if (sFile.exists()) {
-                            title = "上传失败";
-                            message = "文件已存在!";
-                        } else if (!smbFile.canWrite()) {
-                            Smb.smbPut(uri, mFilePath);
-                            title = "上传文件";
-                            message = "上传成功!";
-                        } else {
-                            title = "上传失败";
-                            message = "无写入权限!";
-                        }
-                    } else {
-                        title = "上传失败";
-                        message = "这不是一个目录!";
-                    }
-                    pd.setTitle(title);
-                    pd.setMessage(message);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } finally {
-                    pd.setTitle(title);
-                    pd.setMessage(message);
-                    String finalMessage = message;
-                    runOnUiThread(() -> {
-                        Toast.makeText(MainActivity.this, finalMessage, Toast.LENGTH_LONG).show();
-                    });
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    pd.dismiss();
+                String title = "上传文件";
+                String message = "上传成功!!";
+                String errorMessage = Smb.PutFile(uri, mFilePath);
+                if (errorMessage != null) {
+                    title = "上传失败";
+                    message = errorMessage;
                 }
+                pd.setTitle(title);
+                pd.setMessage(message);
+                String finalMessage = message;
+                runOnUiThread(() -> {
+                    Toast.makeText(MainActivity.this, finalMessage, Toast.LENGTH_LONG).show();
+                });
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                pd.dismiss();
             }).start();
             return true;
         });
