@@ -149,23 +149,27 @@ public class MainActivity extends AppCompatActivity {
 
         boolean isShare = getShareIntent();
 
-        // 判断 WiFi 是否打开
+        // 判断 WiFi 是否连接
         if (!isWiFiConnected(this)) {
             Toast.makeText(MainActivity.this, "WiFi 没有连接！", Toast.LENGTH_SHORT).show();
         } else if (isShare) {
             pd = ProgressDialog.show(this, "扫描 SMB 服务器", "扫描中...");
-            new Thread(() -> {
-                Smb smb = new Smb(MainActivity.this, new SmbCallback() {
-                    @Override
-                    public void scanFinished(List list) {
-                        mList.addAll(list);
-                        progressHandler.sendEmptyMessage(0);
-                    }
-                });
-                smb.scanServer();
-            }).start();
+            ScanSmbServer();
         }
 
+    }
+
+    private void ScanSmbServer() {
+        new Thread(() -> {
+            Smb smb = new Smb(MainActivity.this, new SmbCallback() {
+                @Override
+                public void scanFinished(List list) {
+                    mList.addAll(list);
+                    progressHandler.sendEmptyMessage(0);
+                }
+            });
+            smb.scanServer();
+        }).start();
     }
 
     public boolean isWiFiConnected(Context context) {
