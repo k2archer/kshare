@@ -3,6 +3,7 @@ package com.kwei.kshare;
 import android.app.ProgressDialog;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
@@ -14,19 +15,16 @@ import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import java.io.File;
-import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import jcifs.smb.SmbFile;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -120,17 +118,35 @@ public class MainActivity extends AppCompatActivity {
         if (!isWiFiConnected(this)) {
             Toast.makeText(MainActivity.this, "WiFi 没有连接！", Toast.LENGTH_SHORT).show();
         } else if (isShare) {
-            pd = ProgressDialog.show(this, "扫描 SMB 服务器", "扫描中...");
             ScanSmbServer();
         }
 
     }
 
     private void ScanSmbServer() {
+        pd = ProgressDialog.show(this, "扫描 SMB 服务器", "扫描中...");
+        pd.setCanceledOnTouchOutside(false);
+        pd.setCancelable(true);
+        pd.setOnKeyListener(new DialogInterface.OnKeyListener() {
+            public boolean onKey(DialogInterface dialog, int keyCode,
+                                 KeyEvent event) {
+                if (keyCode == KeyEvent.KEYCODE_BACK) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            finish();
+                        }
+                    });
+                }
+                return false;
+            }
+        });
+
         new Thread(() -> {
             Smb smb = new Smb(MainActivity.this, new SmbCallback() {
                 @Override
                 public void scanFinished(List list) {
+                    mList.clear();
                     mList.addAll(list);
                     progressHandler.sendEmptyMessage(0);
                 }
@@ -182,5 +198,38 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         return path;
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (mList != null) {
+            String path = (String) mList.get(0);
+            int start = path.indexOf('/');
+            start = path.indexOf('/', start + 1);
+            start = path.indexOf('/', start + 1);
+
+            int end = path.lastIndexOf('/', path.length() - 2);
+            end = path.lastIndexOf('/', end - 2);
+            path = path.substring(0, end + 1);
+
+            if (start > end) {
+                ScanSmbServer();
+                return;
+            }
+
+            String finalPath = path;
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    String[] fileList = Smb.getFileList(finalPath);
+                    if (fileList != null) {
+                        mList.clear();
+                        mList.addAll(Arrays.asList(fileList));
+                        progressHandler.sendEmptyMessage(0);
+                    }
+                }
+            }).start();
+        }
+
     }
 }
