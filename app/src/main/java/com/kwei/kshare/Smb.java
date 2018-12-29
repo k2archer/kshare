@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -93,6 +94,23 @@ class Smb {
         }
     }
 
+    public static String[] getFileList(String remoteUrl) {
+        String[] fileList = null;
+        try {
+            SmbFile smbFile = new SmbFile(remoteUrl);
+//            smbFile.connect(); // 等待连接直到连接超时
+            if (smbFile.isDirectory()) {
+                fileList = smbFile.list();
+                for (int i = 0; i < fileList.length; i++) {
+                    fileList[i] = remoteUrl + fileList[i] + '/';
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return fileList;
+    }
     /**
      * * 把局域网中的共享文件复制并保存在本地目录中
      * * @param remoteUrl 共享路径 如：smb//username:password@192.168.0.1/smb/file.txt

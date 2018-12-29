@@ -77,22 +77,12 @@ public class MainActivity extends AppCompatActivity {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        try {
-                            SmbFile smbFile = new SmbFile(uri);
-                            smbFile.connect(); // 等待连接直到连接超时
-                            if (smbFile.isDirectory()) {
-                                String[] fileList = smbFile.list();
-                                for (int i = 0; i < fileList.length; i++) {
-                                    fileList[i] = uri + fileList[i] + '/';
-                                }
-                                mList.clear();
-                                mList.addAll(Arrays.asList(fileList));
-                                progressHandler.sendEmptyMessage(0);
-                            }
-                        } catch (IOException e) {
-                            e.printStackTrace();
+                        String[] fileList = Smb.getFileList(uri);
+                        if (fileList != null) {
+                            mList.clear();
+                            mList.addAll(Arrays.asList(fileList));
+                            progressHandler.sendEmptyMessage(0);
                         }
-
                     }
                 }).start();
             }
