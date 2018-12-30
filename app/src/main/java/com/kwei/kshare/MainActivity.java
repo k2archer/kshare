@@ -28,7 +28,7 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    private String mFilePath;
+    private ArrayList<String> mFilePath = new ArrayList<>();
     private List mList;
     private ListView mListView;
     private ListAdapter mAdapter;
@@ -91,15 +91,20 @@ public class MainActivity extends AppCompatActivity {
             new Thread(() -> {
                 String title = "上传文件";
                 String message = "上传成功!!";
-                String errorMessage = Smb.PutFile(uri, mFilePath);
-                if (errorMessage != null) {
-                    title = "上传失败";
-                    message = errorMessage;
+                int count = 0;
+                for (String path : mFilePath) {
+                    String errorMessage = Smb.PutFile(uri, path);
+                    if (errorMessage != null) {
+                        count++;
+                    }
                 }
-                pd.setTitle(title);
-                pd.setMessage(message);
+                if (count > 0) {
+                    message = count + "个上传失败\n" + (mFilePath.size() - count) + "个上传成功";
+                }
                 String finalMessage = message;
                 runOnUiThread(() -> {
+                    pd.setTitle(title);
+                    pd.setMessage(finalMessage);
                     Toast.makeText(MainActivity.this, finalMessage, Toast.LENGTH_LONG).show();
                 });
                 try {
@@ -171,14 +176,62 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = getIntent();
         Bundle extras = intent.getExtras();
         String action = intent.getAction();
-        if (Intent.ACTION_SEND.equals(action)) {
-            if (extras.containsKey(Intent.EXTRA_STREAM)) {
+        String type = intent.getType();
+        ArrayList<Uri> urilist = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM); // 附件
+        if (Intent.ACTION_SEND_MULTIPLE.equals(action) && type != null) {
+            if (type.startsWith("message/rfc822")) {
+                String subject = intent.getStringExtra(Intent.EXTRA_SUBJECT); // 主题
+                String text = intent.getStringExtra(Intent.EXTRA_TEXT);       // 正文
+                ArrayList<Uri> uriList = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM); // 附件
+                if (uriList.size() > 0) {
+                    mFilePath.clear();
+                    for (int i = 0; i < uriList.size(); i++) {
+                        Uri uri = uriList.get(i);
+                        String filePath = String.valueOf(uri).substring(5); // 获得 file:// 后面路径
+                        mFilePath.add(filePath);
+                    }
+                    return true;
+                }
+            } else if (type.startsWith("image/") || type.startsWith("video/")) {
+                ArrayList<Uri> uriList = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
+                if (uriList.size() > 0) {
+                    mFilePath.clear();
+                    for (Uri uri : uriList) {
+                        String filePath = String.valueOf(getRealPathFromUri(this, uri));
+                        mFilePath.add(filePath);
+                    }
+                    return true;
+                }
+            } else if (type.startsWith("text/")) {
+                ArrayList<Uri> uriList = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
+                if (uriList.size() > 0) {
+                    mFilePath.clear();
+                    for (int i = 0; i < uriList.size(); i++) {
+                        Uri uri = uriList.get(i);
+                        String filePath = String.valueOf(uri).substring(5); // 获得 file:// 后面路径
+                        mFilePath.add(filePath);
+                    }
+                    return true;
+                }
+            }
+        } else if (Intent.ACTION_SEND.equals(action)) {
+            if (extras != null && extras.containsKey(Intent.EXTRA_STREAM)) {
                 try {
                     Uri uri = extras.getParcelable(Intent.EXTRA_STREAM);
-                    Log.i("TTAG", "uri:" + uri.toString());
-                    mFilePath = String.valueOf(getRealPathFromUri(this, uri));
-                    Log.d("TTAG", "文件路径信息：" + mFilePath);
-                    return true;
+                    String uriStr = String.valueOf(extras.getParcelable(Intent.EXTRA_STREAM));
+                    if (uri != null) {
+                        mFilePath.clear();
+                        int end = uriStr.indexOf('/');
+                        String filPathType = uriStr.substring(0, end);
+                        if (filPathType.equals("file:")) {
+                            String filePath = String.valueOf(uri).substring(5); // 获得 file:// 后面路径
+                            mFilePath.add(filePath);
+                        } else if (filPathType.equals("content:")) {
+                            String filePath = String.valueOf(getRealPathFromUri(this, uri));
+                            mFilePath.add(filePath);
+                        }
+                        return true;
+                    }
                 } catch (Exception e) {
                 }
             }
