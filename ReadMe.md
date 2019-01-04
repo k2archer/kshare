@@ -1,6 +1,7 @@
 # README
 
 <div align=center><img width="192" height="192" src="https://raw.githubusercontent.com/k2archer/kshare/master/docs/image/ic_launcher.png"/></div>
+
 ### 项目描述
 
 **What is KShare?**

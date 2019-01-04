@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -30,7 +31,7 @@ import jcifs.smb.SmbFileInputStream;
 import jcifs.smb.SmbFileOutputStream;
 
 class Smb {
-    private int SCAN_TIMEOUT = 1000 * 5; // 默认 5 秒
+    private int SCAN_TIMEOUT = 5; // 默认 5 秒
     private Context mContext;
     private List<String> mListServer;
     private SmbCallback mCallback;
@@ -59,8 +60,10 @@ class Smb {
         }
 
         try {
-            Thread.sleep(SCAN_TIMEOUT);
-            service.shutdownNow();
+            // 等待直到所有任务完成
+            if (!service.awaitTermination(SCAN_TIMEOUT, TimeUnit.SECONDS) ){
+                service.shutdownNow();
+            }
             mCallback.scanFinished(mListServer);
         } catch (InterruptedException e) {
             e.printStackTrace();
